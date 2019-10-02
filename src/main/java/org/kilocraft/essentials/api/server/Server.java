@@ -4,6 +4,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.LiteralText;
 import org.apache.logging.log4j.Logger;
 import org.kilocraft.essentials.api.command.CommandRegistry;
 import org.kilocraft.essentials.api.event.Event;
@@ -145,4 +146,25 @@ public interface Server {
      * @return ""
      */
     String getDisplayBrandName();
+
+    /**
+     * Stops the server
+     */
+    void shutdown(boolean bool);
+
+    /**
+     * Stops the server
+     * @param reason is used for kicking the players
+     */
+    void shutdown(boolean bool, String reason);
+
+    void shutdown(boolean bool, LiteralText reason);
+
+    /**
+     * Kicks all the players on the server
+     * @param reason to kick the player
+     */
+    void kickAll(String reason);
+
+    void kickAll(LiteralText reason);
 }

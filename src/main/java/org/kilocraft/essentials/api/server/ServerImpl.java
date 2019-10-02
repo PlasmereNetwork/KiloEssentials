@@ -5,6 +5,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import org.apache.logging.log4j.Logger;
 import org.kilocraft.essentials.api.command.CommandRegistry;
 import org.kilocraft.essentials.api.event.Event;
@@ -129,6 +130,36 @@ public class ServerImpl implements Server {
     @Override
     public String getDisplayBrandName() {
         return this.serverDisplayBrand;
+    }
+
+    @Override
+    public void shutdown(boolean bool) {
+        kickAll("Server closed");
+        this.server.stop(bool);
+    }
+
+    @Override
+    public void shutdown(boolean bool, String reason) {
+        kickAll(reason);
+        this.server.stop(bool);
+    }
+
+    @Override
+    public void shutdown(boolean bool, LiteralText reason) {
+        kickAll(reason);
+        this.server.stop(bool);
+    }
+
+    @Override
+    public void kickAll(String reason) {
+        kickAll(new LiteralText(reason));
+    }
+
+    @Override
+    public void kickAll(LiteralText reason) {
+        this.server.getPlayerManager().getPlayerList().forEach((playerEntity) -> {
+            playerEntity.networkHandler.disconnect(reason);
+        });
     }
 
     public String getBrandName() {
