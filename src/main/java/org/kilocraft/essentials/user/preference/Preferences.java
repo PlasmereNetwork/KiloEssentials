@@ -19,7 +19,6 @@ public class Preferences {
     @NotNull
     public static final List<Preference<?>> list = new ArrayList<>();
 
-    public static final Preference<Boolean> CAN_FLY = new Preference<>("can_fly", false);
     public static final Preference<Boolean> INVULNERABLE = new Preference<>("invulnerable", false);
     public static final Preference<Boolean> SOCIAL_SPY = new Preference<>("social_spy", false);
     public static final Preference<Boolean> COMMAND_SPY = new Preference<>("command_spy", false);
@@ -37,7 +36,7 @@ public class Preferences {
                 }
             });
     public static final Preference<GameMode> GAME_MODE = new Preference<GameMode>(
-            "gamemode", GameMode.NOT_SET,
+            "gamemode", null,
             (fun) -> fun.tag().putInt(fun.setting().getId(), fun.value().getId()),
             (fun) -> fun.set(GameMode.byId(fun.tag().getInt(fun.setting().getId())))
     );

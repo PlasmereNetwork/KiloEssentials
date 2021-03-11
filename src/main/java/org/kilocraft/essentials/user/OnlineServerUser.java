@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kilocraft.essentials.CommandPermission;
 import org.kilocraft.essentials.EssentialPermission;
+import org.kilocraft.essentials.Format;
 import org.kilocraft.essentials.KiloCommands;
 import org.kilocraft.essentials.api.KiloEssentials;
 import org.kilocraft.essentials.api.KiloServer;
@@ -28,11 +29,14 @@ import org.kilocraft.essentials.api.world.location.Location;
 import org.kilocraft.essentials.api.world.location.Vec3dLocation;
 import org.kilocraft.essentials.chat.KiloChat;
 import org.kilocraft.essentials.extensions.playtimecommands.PlaytimeCommands;
+import org.kilocraft.essentials.servermeta.PlayerListMeta;
 import org.kilocraft.essentials.user.preference.Preferences;
+import org.kilocraft.essentials.util.PermissionUtil;
 import org.kilocraft.essentials.util.messages.nodes.ExceptionMessageNode;
 
 import java.net.SocketAddress;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 public class OnlineServerUser extends ServerUser implements OnlineUser {
@@ -64,7 +68,7 @@ public class OnlineServerUser extends ServerUser implements OnlineUser {
     @Override
     public void teleport(@NotNull final Location loc, final boolean sendTicket) {
         if (sendTicket) {
-            loc.getWorld().getChunkManager().addTicket(ChunkTicketType.POST_TELEPORT, loc.toChunkPos(), 1, this.asPlayer().getEntityId());
+            loc.getWorld().getChunkManager().addTicket(ChunkTicketType.POST_TELEPORT, loc.toChunkPos(), 1, this.asPlayer().getId());
         }
 
         this.asPlayer().teleport(loc.getWorld(), loc.getX(), loc.getY(), loc.getZ(), loc.getRotation().getYaw(), loc.getRotation().getPitch());
@@ -92,13 +96,13 @@ public class OnlineServerUser extends ServerUser implements OnlineUser {
 
     @Override
     public int sendError(final String message) {
-        this.sendMessage(Component.text(message).color(NamedTextColor.RED));
+        this.sendMessage(ComponentText.of(message).color(NamedTextColor.RED));
         return 0;
     }
 
     @Override
     public void sendPermissionError(@NotNull String hover) {
-        this.sendMessage(Component.text(KiloChat.getFormattedLang("command.exception.permission")).style(style -> style.hoverEvent(HoverEvent.showText(Component.text(hover)))));
+        this.sendMessage(ComponentText.of(KiloChat.getFormattedLang("command.exception.permission")).style(style -> style.hoverEvent(HoverEvent.showText(Component.text(hover)))));
     }
 
     @Override
@@ -183,7 +187,6 @@ public class OnlineServerUser extends ServerUser implements OnlineUser {
 
     @Override
     public void setFlight(final boolean set) {
-        super.getPreferences().set(Preferences.CAN_FLY, true);
         this.asPlayer().getAbilities().allowFlying = set;
         this.asPlayer().getAbilities().flying = set;
         this.asPlayer().sendAbilitiesUpdate();
@@ -191,7 +194,7 @@ public class OnlineServerUser extends ServerUser implements OnlineUser {
 
     @Override
     public void setGameMode(GameMode mode) {
-        this.asPlayer().setGameMode(mode);
+        this.asPlayer().changeGameMode(mode);
     }
 
     @Override
@@ -230,7 +233,6 @@ public class OnlineServerUser extends ServerUser implements OnlineUser {
     }
 
     public void onJoined() {
-        this.setFlight(super.getPreference(Preferences.CAN_FLY));
 
         SocketAddress socketAddress = this.getConnection().getAddress();
         if (socketAddress != null) {
@@ -241,7 +243,7 @@ public class OnlineServerUser extends ServerUser implements OnlineUser {
         super.systemMessageCoolDown = 0;
 
         GameMode gameMode = super.getPreference(Preferences.GAME_MODE);
-        if (gameMode == GameMode.NOT_SET) {
+        if (gameMode == null) {
             gameMode = this.asPlayer().interactionManager.getGameMode();
         }
 
@@ -258,7 +260,13 @@ public class OnlineServerUser extends ServerUser implements OnlineUser {
             isStaff = true;
         }
 
-        KiloEssentials.getInstance().getLuckPermsCompatibility().ifPresent((it) -> it.onUserJoin(this));
+        if (KiloCommands.hasPermission(this.getCommandSource(), CommandPermission.NICKNAME_SELF) || KiloCommands.hasPermission(this.getCommandSource(), CommandPermission.NICKNAME_OTHERS)) {
+            this.getNickname().ifPresent(s -> this.setNickname(Format.parse(this, s, PermissionUtil.COMMAND_PERMISSION_PREFIX + "nickname.formatting.")));
+        } else {
+            this.clearNickname();
+        }
+
+        PlayerListMeta.updateForAll();
     }
 
     public void onLeave() {

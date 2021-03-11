@@ -4,6 +4,7 @@ import net.minecraft.server.MinecraftServer;
 import org.kilocraft.essentials.api.KiloServer;
 import org.kilocraft.essentials.api.server.Brandable;
 import org.kilocraft.essentials.events.server.ServerTickEventImpl;
+import org.kilocraft.essentials.util.math.DataTracker;
 import org.kilocraft.essentials.util.TpsTracker;
 import org.kilocraft.essentials.util.math.RollingAverage;
 import org.spongepowered.asm.mixin.Mixin;
@@ -47,6 +48,7 @@ public abstract class MinecraftServerMixin implements Brandable {
             TpsTracker.tps1440.add(currentTps, diff);
             tickSection = currentTime;
         }
+        DataTracker.compute();
 
         KiloServer.getServer().triggerEvent(new ServerTickEventImpl((MinecraftServer) (Object) this));
     }

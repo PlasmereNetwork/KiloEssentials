@@ -4,6 +4,16 @@
   "package": "org.kilocraft.essentials.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "EntityMixin",
+    "EntitySelectorOptionsMixin",
+    "GuardianEntityMixin",
+    "MinecraftDedicatedServerMixin",
+    "RconClientMixin",
+    "ServerScoreboardMixin",
+    "ServerWorldMixin",
+    "SpawnHelperInfoMixin",
+    "SpawnHelperMixin",
+    "WorldMixin"
   ],
   "server": [
     "AnvilScreenHandlerMixin",
@@ -14,8 +24,7 @@
     "PlayerListS2CPacketMixin",
     "QueryResponseS2CPacketMixin",
     "ServerPlayerEntityMixin",
-    "ServerPlayNetworkHandlerMixin",
-    "ServerWorldMixin"
+    "ServerPlayNetworkHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -236,7 +236,7 @@ public class ServerUser implements User {
 
     @Override
     public boolean isOnline() {
-        return this instanceof OnlineUser || MANAGER.isOnline(this);
+        return MANAGER.isOnline(this);
     }
 
     @Override
@@ -264,10 +264,12 @@ public class ServerUser implements User {
 
     @Override
     public String getRankedDisplayNameAsString() {
-        if (this.isOnline()) {
-            return UserUtils.getDisplayNameWithMetaAsString((OnlineUser) this, true);
+        try {
+            if (this.isOnline()) {
+                return UserUtils.getDisplayNameWithMetaAsString((OnlineUser) this, true);
+            }
+        } catch (IllegalStateException ignored) {
         }
-
         return this.getDisplayName();
     }
 
@@ -311,7 +313,7 @@ public class ServerUser implements User {
     @Override
     public Optional<String> getNickname() {
         Optional<String> optional = this.getPreference(Preferences.NICK);
-        return optional.map(s -> Optional.of("<reset>" + s + "<reset></gradient></rainbow>")).orElse(optional);
+        return optional.map(s -> Optional.of(s + "<reset></gradient></rainbow>")).orElse(optional);
     }
 
     @Override
