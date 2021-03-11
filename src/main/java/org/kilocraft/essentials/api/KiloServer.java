@@ -1,10 +1,15 @@
 package org.kilocraft.essentials.api;
 
-import org.kilocraft.essentials.api.commands.KiloAPICommands;
+import net.minecraft.server.MinecraftServer;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.kilocraft.essentials.KiloEssentialsImpl;
+import org.kilocraft.essentials.ServerImpl;
 import org.kilocraft.essentials.api.server.Server;
-import org.kilocraft.essentials.api.util.SomeGlobals;
+import org.kilocraft.essentials.events.EventRegistryImpl;
+import org.kilocraft.essentials.user.ServerUserManager;
 
-public class KiloServer{
+public class KiloServer {
     private static Server server;
 
     /**
@@ -12,9 +17,11 @@ public class KiloServer{
      *
      * @return The server instance
      */
-    public static Server getServer() {
-        if (server == null)
-            throw new RuntimeException("Server isn't set!");
+    public @NotNull static Server getServer() {
+        if (server == null) {
+            return null;
+//            throw new RuntimeException("Server isn't set!");
+        }
 
         return server;
     }
@@ -23,16 +30,30 @@ public class KiloServer{
      * Sets the global server instance
      * <b>Should not be used by mods!</b>
      *
-     * @param server Server instance
+     * @param minecraftServer Server instance
      */
-    public static void setServer(Server server) {
-        if (KiloServer.server != null)
-            throw new RuntimeException("Server is already set!");
-        else KiloServer.server = server;
+    public static void setupServer(@NotNull final MinecraftServer minecraftServer) {
+        String brand = String.format(
+                ModConstants.getProperties().getProperty("server.brand.full"),
+                ModConstants.getMinecraftVersion(),
+                ModConstants.getLoaderVersion(),
+                ModConstants.getMappingsVersion(),
+                ModConstants.getVersion()
+        );
 
-        KiloAPICommands.register(SomeGlobals.commandDispatcher);
+        server = new ServerImpl(
+                minecraftServer,
+                new EventRegistryImpl(),
+                new ServerUserManager(),
+                brand
+        );
+
+        KiloServer.getLogger().info("Server set: " + brand);
+        KiloEssentialsImpl.onServerSet(server);
     }
 
-    //PermissionService
+    public static Logger getLogger() {
+        return server.getLogger();
+    }
 
 }
