@@ -2,6 +2,14 @@ package org.kilocraft.essentials.user;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.group.Group;
+import net.luckperms.api.node.ChatMetaType;
+import net.luckperms.api.node.NodeType;
+import net.luckperms.api.node.types.ChatMetaNode;
+import net.luckperms.api.node.types.PrefixNode;
+import net.luckperms.api.node.types.SuffixNode;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
@@ -10,6 +18,7 @@ import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kilocraft.essentials.EssentialPermission;
+import org.kilocraft.essentials.KiloEssentialsImpl;
 import org.kilocraft.essentials.api.KiloEssentials;
 import org.kilocraft.essentials.api.KiloServer;
 import org.kilocraft.essentials.api.ModConstants;
@@ -25,6 +34,7 @@ import org.kilocraft.essentials.api.world.location.Vec3dLocation;
 import org.kilocraft.essentials.config.KiloConfig;
 import org.kilocraft.essentials.user.preference.Preferences;
 import org.kilocraft.essentials.user.preference.ServerUserPreferences;
+import org.kilocraft.essentials.util.PermissionUtil;
 import org.kilocraft.essentials.util.nbt.NBTUtils;
 import org.kilocraft.essentials.util.player.UserUtils;
 import org.kilocraft.essentials.util.text.Texter;
@@ -32,6 +42,7 @@ import org.kilocraft.essentials.util.text.Texter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -70,6 +81,11 @@ public class ServerUser implements User {
     String lastSocketAddress;
     int ticksPlayed = 0;
     Date lastOnline;
+    Group group;
+    String prefix;
+    String suffix;
+
+    private final LuckPerms api = LuckPermsProvider.get();
 
     public ServerUser(@NotNull final UUID uuid) {
         this.uuid = uuid;
@@ -77,6 +93,25 @@ public class ServerUser implements User {
 
         if (UserHomeHandler.isEnabled()) {
             this.homeHandler = new UserHomeHandler(this);
+        }
+
+        if (this.group == null) {
+            try {
+                this.group = api.getGroupManager().getGroup(Objects.requireNonNull(api.getUserManager().getUser(uuid)).getPrimaryGroup());
+
+                if (this.group == null) {
+                    this.group = api.getGroupManager().getGroup("default");
+                }
+            } catch (Exception e) {
+                this.group = api.getGroupManager().getGroup("default");
+            }
+        }
+
+        try {
+            this.prefix = getPrefix();
+            this.suffix = getSuffix();
+        } catch (Exception e) {
+            KiloEssentials.getLogger().error("Failed to Load User Prefix / Suffix [" + uuid.toString() + "]", e);
         }
 
         try {
@@ -244,8 +279,37 @@ public class ServerUser implements User {
         return this.getNickname().isPresent();
     }
 
+    public String getPrefix(){
+        int priority = Integer.MIN_VALUE;
+        String prefix = "";
+        String suffix = "";
+        for (PrefixNode node : this.group.getNodes(NodeType.PREFIX)) {
+            if (node.getPriority() < priority) continue;
+            priority = node.getPriority();
+
+            prefix = node.getKey();
+        }
+
+        return prefix;
+    }
+
+    public String getSuffix(){
+        int priority = Integer.MIN_VALUE;
+        String prefix = "";
+        String suffix = "";
+
+        for (SuffixNode node : this.group.getNodes(NodeType.SUFFIX)) {
+            if (node.getPriority() < priority) continue;
+            priority = node.getPriority();
+
+            suffix = node.getKey();
+        }
+
+        return suffix;
+    }
+
     public String getDisplayName() {
-        return this.getNickname().orElseGet(() -> this.name);
+        return this.prefix + this.getNickname().orElseGet(() -> this.name) + this.suffix;
     }
 
     @Override
