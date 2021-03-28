@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.kilocraft.essentials.util.PermissionUtil;
 
 public enum CommandPermission {
+    UPDATE_GROUPS("taco.groups.update"),
     PING_SELF("ping.self"),
     PING_OTHERS("ping.others"),
     WARP("warp"),

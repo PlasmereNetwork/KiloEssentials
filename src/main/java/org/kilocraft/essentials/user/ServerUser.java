@@ -280,35 +280,56 @@ public class ServerUser implements User {
     }
 
     public String getPrefix(){
+        this.group = api.getGroupManager().getGroup(Objects.requireNonNull(api.getUserManager().getUser(uuid)).getPrimaryGroup());
+
         int priority = Integer.MIN_VALUE;
         String prefix = "";
-        String suffix = "";
         for (PrefixNode node : this.group.getNodes(NodeType.PREFIX)) {
             if (node.getPriority() < priority) continue;
             priority = node.getPriority();
 
-            prefix = node.getKey();
+            prefix = removePreSufDot(node.getMetaValue());
         }
 
         return prefix;
     }
 
     public String getSuffix(){
+        this.group = api.getGroupManager().getGroup(Objects.requireNonNull(api.getUserManager().getUser(uuid)).getPrimaryGroup());
+
         int priority = Integer.MIN_VALUE;
-        String prefix = "";
         String suffix = "";
 
         for (SuffixNode node : this.group.getNodes(NodeType.SUFFIX)) {
             if (node.getPriority() < priority) continue;
             priority = node.getPriority();
 
-            suffix = node.getKey();
+            suffix = removePreSufDot(node.getMetaValue());
         }
 
         return suffix;
     }
 
+    public String removePreSufDot(String text){
+        if (text.startsWith("prefix.")){
+            text = text.substring(text.indexOf(".", "prefix.x".length()));
+        }
+
+        if (text.startsWith("suffix.")) {
+            text = text.substring(text.indexOf(".", "suffix.x".length()));
+        }
+
+        if (text.startsWith(".")) {
+            text = text.substring(1);
+        }
+
+        return text;
+    }
+
     public String getDisplayName() {
+        this.prefix = getPrefix();
+        this.suffix = getSuffix();
+
         return this.prefix + this.getNickname().orElseGet(() -> this.name) + this.suffix;
     }
 

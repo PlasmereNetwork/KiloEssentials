@@ -6,11 +6,16 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
 import net.minecraft.SharedConstants;
 import net.minecraft.network.NetworkThreadUtils;
 import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
+import net.minecraft.scoreboard.AbstractTeam;
+import net.minecraft.scoreboard.Team;
 import net.minecraft.server.BanEntry;
 import net.minecraft.server.BannedPlayerEntry;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
@@ -39,11 +44,13 @@ import org.kilocraft.essentials.api.util.Cached;
 import org.kilocraft.essentials.chat.KiloChat;
 import org.kilocraft.essentials.chat.ServerChat;
 import org.kilocraft.essentials.chat.StringText;
+import org.kilocraft.essentials.commands.CommandUtils;
 import org.kilocraft.essentials.config.ConfigObjectReplacerUtil;
 import org.kilocraft.essentials.config.KiloConfig;
 import org.kilocraft.essentials.config.main.sections.ModerationConfigSection;
 import org.kilocraft.essentials.extensions.betterchairs.SeatManager;
 import org.kilocraft.essentials.mixin.accessor.ServerConfigEntryAccessor;
+import org.kilocraft.essentials.servermeta.PlayerListMeta;
 import org.kilocraft.essentials.user.preference.Preferences;
 import org.kilocraft.essentials.util.*;
 import org.kilocraft.essentials.util.player.UserUtils;
@@ -376,6 +383,33 @@ public class ServerUserManager implements UserManager, TickListener {
         this.users.add(serverUser);
 
         serverUser.getNickname().ifPresent((nick) -> this.nicknameToUUID.put(nick, playerEntity.getUuid()));
+
+        for (ServerPlayerEntity player : KiloServer.getServer().getPlayerManager().getPlayerList()) {
+            ((ServerUserManager) KiloServer.getServer().getUserManager()).updateGroup(player);
+        }
+    }
+
+    public boolean updateGroup(ServerPlayerEntity playerEntity){
+        OnlineServerUser serverUser = new OnlineServerUser(playerEntity);
+
+        AbstractTeam team = playerEntity.getScoreboardTeam();
+
+        if (team == null) return false;
+
+        if (! serverUser.group.getName().equals(team.getName())) {
+            try {
+                CommandUtils.runCommandWithFormatting(Objects.requireNonNull(playerEntity.getServer()).getCommandSource(), "lp user " + playerEntity.getEntityName() + " parent set " + team.getName());
+
+                PlayerListMeta.updateForAll();
+
+                return true;
+            } catch (Exception e){
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        return false;
     }
 
     public void onJoined(ServerPlayerEntity playerEntity) {

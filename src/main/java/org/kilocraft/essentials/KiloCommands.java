@@ -127,6 +127,7 @@ public class KiloCommands {
     }
 
     private void registerDefaults() {
+        this.register(new UpdateGroupsCommand());
         this.register(new DebugEssentialsCommand());
         this.register(new LightningCommand());
         this.register(new MobCapCommand());
