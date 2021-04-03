@@ -3,12 +3,11 @@ package org.kilocraft.essentials.extensions.magicalparticles;
 import com.google.common.reflect.TypeToken;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.Packet;
 import net.minecraft.particle.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3f;
 import net.minecraft.util.registry.Registry;
 import ninja.leaping.configurate.ConfigurationNode;
@@ -430,17 +429,17 @@ public class ParticleAnimationManager implements ReloadableConfigurableFeature, 
     }
 
     @Override
-    public CompoundTag serialize() {
-        CompoundTag tag = new CompoundTag();
+    public NbtCompound serialize() {
+        NbtCompound tag = new NbtCompound();
         uuidIdentifierMap.forEach((uuid, identifier) -> tag.putString(uuid.toString(), identifier.toString()));
         return tag;
     }
 
     @Override
-    public void deserialize(@NotNull CompoundTag compoundTag) {
+    public void deserialize(@NotNull NbtCompound NbtCompound) {
         uuidIdentifierMap.clear();
-        for (String key : compoundTag.getKeys()) {
-            uuidIdentifierMap.put(UUID.fromString(key), new Identifier(compoundTag.getString(key)));
+        for (String key : NbtCompound.getKeys()) {
+            uuidIdentifierMap.put(UUID.fromString(key), new Identifier(NbtCompound.getString(key)));
         }
     }
 }

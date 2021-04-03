@@ -1,10 +1,11 @@
 package org.kilocraft.essentials.user;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -36,7 +37,6 @@ import org.kilocraft.essentials.util.messages.nodes.ExceptionMessageNode;
 
 import java.net.SocketAddress;
 import java.util.Date;
-import java.util.Optional;
 import java.util.UUID;
 
 public class OnlineServerUser extends ServerUser implements OnlineUser {
@@ -175,7 +175,7 @@ public class OnlineServerUser extends ServerUser implements OnlineUser {
     }
 
     @Override
-    public void fromTag(@NotNull final CompoundTag tag) {
+    public void fromTag(@NotNull final NbtCompound tag) {
         // All the other serialization logic is handled.
         super.fromTag(tag);
     }
@@ -261,7 +261,13 @@ public class OnlineServerUser extends ServerUser implements OnlineUser {
         }
 
         if (KiloCommands.hasPermission(this.getCommandSource(), CommandPermission.NICKNAME_SELF) || KiloCommands.hasPermission(this.getCommandSource(), CommandPermission.NICKNAME_OTHERS)) {
-            this.getNickname().ifPresent(s -> this.setNickname(Format.parse(this, s, PermissionUtil.COMMAND_PERMISSION_PREFIX + "nickname.formatting.")));
+            this.getPreference(Preferences.NICK).ifPresent(s -> {
+                try {
+                    this.setNickname(Format.validatePermission(this, s, PermissionUtil.COMMAND_PERMISSION_PREFIX + "nickname.formatting."));
+                } catch (CommandSyntaxException e) {
+                    this.clearNickname();
+                }
+            });
         } else {
             this.clearNickname();
         }
